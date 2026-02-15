@@ -10,19 +10,45 @@
             --card-w: 140px;
             --card-h: 210px;
             --gap: 20px;
+            
+            /* Tema Escuro (padrão) */
+            --bg-color: transparent;
+            --text-color: #ffffff;
+            --btn-bg: #000000;
+            --btn-hover: #222222;
+            --modal-bg: rgba(0,0,0,0.95);
+            --modal-box-bg: #1a1a1a;
+            --modal-border: #333333;
+            --textarea-bg: #000000;
+            --textarea-border: #444444;
+        }
+
+        body.light-mode {
+            /* Tema Claro */
+            --bg-color: transparent;
+            --text-color: #000000;
+            --btn-bg: #ffffff;
+            --btn-hover: #f0f0f0;
+            --modal-bg: rgba(255,255,255,0.95);
+            --modal-box-bg: #ffffff;
+            --modal-border: #cccccc;
+            --textarea-bg: #f5f5f5;
+            --textarea-border: #cccccc;
+            --primary: #000000;
         }
 
         body {
             margin: 0;
-            background: transparent;
+            background: var(--bg-color);
             font-family: 'Segoe UI', system-ui, sans-serif;
-            color: white;
+            color: var(--text-color);
             overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
             height: 100vh;
             width: 100vw;
+            transition: color 0.3s ease;
         }
 
         .widget-container {
@@ -46,6 +72,11 @@
             border-right: 12px solid transparent;
             border-top: 15px solid rgba(255, 255, 255, 0.3);
             z-index: 100;
+            transition: border-top-color 0.3s ease;
+        }
+
+        body.light-mode .pointer-marker {
+            border-top-color: rgba(0, 0, 0, 0.3);
         }
 
         .carousel-viewport {
@@ -85,8 +116,9 @@
             transform: scale(1.1);
             z-index: 10;
             box-shadow: 0 0 35px var(--primary);
-            border: 2px solid white;
+            border: 2px solid var(--primary);
             cursor: pointer;
+            transition: transform 0.5s, box-shadow 0.5s, filter 0.5s, opacity 0.5s, border-color 0.3s;
         }
 
         .track.has-winner .book-card:not(.winner) {
@@ -109,12 +141,17 @@
         .book-card.is-read { filter: grayscale(100%) brightness(0.4); }
 
         .book-info {
-            margin-top: 15px;
+            margin-top: 5px;
             font-size: 14px;
             font-weight: 600;
             text-align: center;
             height: 20px;
-            text-shadow: 0 2px 8px black;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+            transition: text-shadow 0.3s ease;
+        }
+
+        body.light-mode .book-info {
+            text-shadow: 0 2px 8px rgba(255,255,255,0.8);
         }
 
         .controls {
@@ -129,44 +166,93 @@
             width: 32px; 
             height: 32px;
             border-radius: 50%; 
-            border: 1px solid rgba(255,255,255,0.1);
-            background: #000000;
-            color: white;
+            border: 1px solid rgba(128,128,128,0.3);
+            background: var(--btn-bg);
+            color: var(--text-color);
             cursor: pointer; 
             font-size: 14px;
             display: flex; 
             align-items: center; 
             justify-content: center;
             transition: 0.3s; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.8);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
         
         .btn-icon:hover { 
             transform: scale(1.1); 
-            background: #222; 
+            background: var(--btn-hover);
         }
 
-        /* MODAL DE BACKUP (IGUAL À ESTANTE) */
+        body.light-mode .btn-icon {
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        /* MODAL DE BACKUP */
         .sync-modal {
             position: absolute; inset: 0;
-            background: rgba(0,0,0,0.95); z-index: 200;
-            display: none; align-items: center; justify-content: center;
+            background: var(--modal-bg);
+            z-index: 200;
+            display: none; 
+            align-items: center; 
+            justify-content: center;
+            transition: background 0.3s ease;
         }
         .sync-modal.open { display: flex; }
         .sync-box { 
-            background: #1a1a1a; padding: 20px; border-radius: 12px; 
-            width: 300px; border: 1px solid #333; text-align: left;
+            background: var(--modal-box-bg);
+            padding: 20px; 
+            border-radius: 12px; 
+            width: 300px; 
+            border: 1px solid var(--modal-border);
+            text-align: left;
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+        
+        .sync-box h3 {
+            margin: 0;
+            font-size: 14px;
+            color: #aaa;
         }
         
         textarea { 
-            width: 100%; height: 80px; background: #000; color: #2ecc71; 
-            font-family: monospace; font-size: 10px; border: 1px solid #444; 
-            margin: 10px 0; padding: 8px; box-sizing: border-box; resize: none;
+            width: 100%; 
+            height: 80px; 
+            background: var(--textarea-bg);
+            color: #2ecc71; 
+            font-family: monospace; 
+            font-size: 10px; 
+            border: 1px solid var(--textarea-border);
+            margin: 10px 0; 
+            padding: 8px; 
+            box-sizing: border-box; 
+            resize: none;
+            transition: background 0.3s ease, border-color 0.3s ease;
         }
 
         .btn-sync-action {
-            padding: 8px; cursor: pointer; border: none; border-radius: 4px; 
-            font-weight: 600; font-size: 11px; color: white; flex: 1;
+            padding: 8px; 
+            cursor: pointer; 
+            border: none; 
+            border-radius: 4px; 
+            font-weight: 600; 
+            font-size: 11px; 
+            color: white; 
+            flex: 1;
+        }
+
+        .btn-close-modal {
+            width: 100%;
+            background: transparent;
+            color: #666;
+            border: none;
+            margin-top: 10px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: color 0.3s ease;
+        }
+
+        .btn-close-modal:hover {
+            color: #999;
         }
 
         @media (max-width: 500px) {
@@ -184,33 +270,50 @@
     <div class="book-info" id="bookTitle">Pronto para o sorteio?</div>
     
     <div class="controls">
+        <button class="btn-icon" onclick="toggleTheme()" title="Alterar Tema">◐</button>
         <button class="btn-icon" onclick="openSync()" title="Backup">☁</button>
         <button class="btn-icon" onclick="startSorteio()" title="Sortear">✦</button>
     </div>
 
     <div class="sync-modal" id="syncModal">
         <div class="sync-box">
-            <h3 style="margin:0; font-size: 14px; color: #aaa;">BACKUP / RESTAURAÇÃO</h3>
+            <h3>BACKUP / RESTAURAÇÃO</h3>
             <textarea id="backupText" placeholder="O código aparecerá aqui..."></textarea>
             <div style="display:flex; gap:5px;">
                 <button class="btn-sync-action" style="background:#2196F3;" onclick="generateBackupCode()">GERAR CÓDIGO</button>
                 <button class="btn-sync-action" style="background:#FF9800;" onclick="restoreBackupCode()">RESTAURAR</button>
             </div>
-            <button onclick="closeSync()" style="width:100%; background:transparent; color:#666; border:none; margin-top:10px; cursor:pointer; font-size:11px;">FECHAR</button>
+            <button class="btn-close-modal" onclick="closeSync()">FECHAR</button>
         </div>
     </div>
 </div>
 
 <script>
-    const STORAGE_KEY = 'sorteioLivros_Lidos'; // Chave única
+    const STORAGE_KEY = 'sorteioLivros_Lidos';
+    const THEME_KEY = 'sorteioLivros_Theme';
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // Carregar tema salvo
+    function loadTheme() {
+        const savedTheme = localStorage.getItem(THEME_KEY);
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+        }
+    }
+    
+    // Alternar tema
+    function toggleTheme() {
+        document.body.classList.toggle('light-mode');
+        const currentTheme = document.body.classList.contains('light-mode') ? 'light' : 'dark';
+        localStorage.setItem(THEME_KEY, currentTheme);
+    }
     
     function playTick() {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'sine';
         osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
@@ -236,7 +339,7 @@
         { t: "Moby Dick", c: "https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcQ9Z7JwUOGmXVuGvuN8XclVpn5jtn2SFXe0yggk2yi7HHsEFI3iLtferwd34ORfTamLwOUQQ-HoSnjuMqkd9ZDuqv026uxm4tHfXWhFEggnGPNBwRHaaNVm&usqp=CAc", l: "https://www.notion.so/Backups-2e4d0c17411c80e08bb3dc587b82d17f" }
     ];
 
-    const REPETICOES = 100;
+    const REPETICOES = 25;
     const TOTAL_ITEMS = obrasBase.length * REPETICOES;
     let lidos = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
     let currentGlobalIndex = Math.floor(TOTAL_ITEMS / 2);
@@ -333,7 +436,7 @@
         });
     }
 
-    // --- SISTEMA DE BACKUP IGUAL À ESTANTE ---
+    // --- SISTEMA DE BACKUP ---
     function openSync() { document.getElementById('syncModal').classList.add('open'); }
     function closeSync() { document.getElementById('syncModal').classList.remove('open'); }
 
@@ -364,6 +467,9 @@
     }
 
     window.addEventListener('resize', () => moveToIndex(currentGlobalIndex, false));
+    
+    // Inicializar
+    loadTheme();
     initTrack();
 </script>
 </body>
