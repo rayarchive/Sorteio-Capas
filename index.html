@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --primary: #ffffff; 
+            --accent: #2ecc71;  
+            --card-w: 140px;
+            --card-h: 210px;
+            --gap: 20px;
+        }
+
+        body {
+            margin: 0;
+            background: transparent;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            color: white;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .widget-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .pointer-marker {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 12px solid transparent;
+            border-right: 12px solid transparent;
+            border-top: 15px solid rgba(255, 255, 255, 0.3);
+            z-index: 100;
+        }
+
+        .carousel-viewport {
+            width: 100%;
+            height: 320px;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: visible;
+            mask-image: linear-gradient(to right, transparent, black 25%, black 75%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 25%, black 75%, transparent);
+        }
+
+        .track {
+            display: flex;
+            gap: var(--gap);
+            position: absolute;
+            left: 0;
+            will-change: transform;
+        }
+
+        .book-card {
+            min-width: var(--card-w);
+            max-width: var(--card-w);
+            height: var(--card-h);
+            border-radius: 12px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            transform: scale(0.9);
+            transition: transform 0.5s, box-shadow 0.5s, filter 0.5s, opacity 0.5s;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.5);
+            flex-shrink: 0;
+        }
+
+        .book-card.winner {
+            transform: scale(1.1);
+            z-index: 10;
+            box-shadow: 0 0 35px var(--primary);
+            border: 2px solid white;
+            cursor: pointer;
+        }
+
+        .track.has-winner .book-card:not(.winner) {
+            opacity: 0.3;
+            filter: grayscale(100%) blur(2px);
+        }
+
+        .read-check {
+            position: absolute;
+            top: 8px; right: 8px;
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.7);
+            border: 1.5px solid rgba(255,255,255,0.5);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; z-index: 30; transition: 0.3s;
+            font-size: 12px;
+        }
+        .is-read .read-check { background: var(--accent); border-color: var(--accent); color: white; }
+        .book-card.is-read { filter: grayscale(100%) brightness(0.4); }
+
+        .book-info {
+            margin-top: 15px;
+            font-size: 18px;
+            font-weight: 700;
+            text-align: center;
+            height: 25px;
+            text-shadow: 0 2px 8px black;
+        }
+
+        .controls {
+            position: fixed; bottom: 20px; right: 20px;
+            display: flex; gap: 10px;
+        }
+        .btn-icon {
+            width: 40px; height: 40px;
+            border-radius: 50%; border: 1px solid rgba(255,255,255,0.1);
+            background: #000000;
+            color: white;
+            cursor: pointer; font-size: 18px;
+            display: flex; align-items: center; justify-content: center;
+            transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.8);
+        }
+        .btn-icon:hover { transform: scale(1.1); background: #222; }
+
+        /* MODAL DE BACKUP (IGUAL À ESTANTE) */
+        .sync-modal {
+            position: absolute; inset: 0;
+            background: rgba(0,0,0,0.95); z-index: 200;
+            display: none; align-items: center; justify-content: center;
+        }
+        .sync-modal.open { display: flex; }
+        .sync-box { 
+            background: #1a1a1a; padding: 20px; border-radius: 12px; 
+            width: 300px; border: 1px solid #333; text-align: left;
+        }
+        
+        textarea { 
+            width: 100%; height: 80px; background: #000; color: #2ecc71; 
+            font-family: monospace; font-size: 10px; border: 1px solid #444; 
+            margin: 10px 0; padding: 8px; box-sizing: border-box; resize: none;
+        }
+
+        .btn-sync-action {
+            padding: 8px; cursor: pointer; border: none; border-radius: 4px; 
+            font-weight: 600; font-size: 11px; color: white; flex: 1;
+        }
+
+        @media (max-width: 500px) {
+            :root { --card-w: 100px; --card-h: 150px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="widget-container">
+    <div class="pointer-marker"></div>
+    <div class="carousel-viewport" id="viewport">
+        <div class="track" id="track"></div>
+    </div>
+    <div class="book-info" id="bookTitle">Pronto para o sorteio?</div>
+    
+    <div class="controls">
+        <button class="btn-icon" onclick="openSync()" title="Backup">☁</button>
+        <button class="btn-icon" onclick="startSorteio()" title="Sortear">✦</button>
+    </div>
+
+    <div class="sync-modal" id="syncModal">
+        <div class="sync-box">
+            <h3 style="margin:0; font-size: 14px; color: #aaa;">BACKUP / RESTAURAÇÃO</h3>
+            <textarea id="backupText" placeholder="O código aparecerá aqui..."></textarea>
+            <div style="display:flex; gap:5px;">
+                <button class="btn-sync-action" style="background:#2196F3;" onclick="generateBackupCode()">GERAR CÓDIGO</button>
+                <button class="btn-sync-action" style="background:#FF9800;" onclick="restoreBackupCode()">RESTAURAR</button>
+            </div>
+            <button onclick="closeSync()" style="width:100%; background:transparent; color:#666; border:none; margin-top:10px; cursor:pointer; font-size:11px;">FECHAR</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const STORAGE_KEY = 'sorteioLivros_Lidos'; // Chave única
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    function playTick() {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.05);
+    }
+
+    const obrasBase = [
+        { t: "O Hobbit", c: "https://m.media-amazon.com/images/I/51kAYMwbQIL._AC_SR290,290_.jpg", l: "https://www.notion.so/Backups-2e4d0c17411c80e08bb3dc587b82d17f" },
+        { t: "1984", c: "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcSWbRScPL5NMcTwehk8P9FR37ZK2p8Gz8Ux3NFh7edb1TqSEr-wwSfKARC8fz3daxBQy4OWfg3MvDB-BIubsRzScaWevNVvpXjj8u0ps532&usqp=CAc", l: "https://www.notion.so/Backups-2e4d0c17411c80e08bb3dc587b82d17f" },
+        { t: "Duna", c: "https://m.media-amazon.com/images/I/81zN7udGRUL._AC_UF1000,1000_QL80_.jpg", l: "https://www.notion.so/Backups-2e4d0c17411c80e08bb3dc587b82d17f" },
+        { t: "Cem Anos de Solidão", c: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQlOl8jxY98AxAoVbP1fm-gQ27lPduG5PDlK-1idxcpbg&s", l: "https://www.notion.so/Backups-2e4d0c17411c80e08bb3dc587b82d17f" },
+        { t: "O Pequeno Príncipe", c: "https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcQMX60pXDSE0YvOVx4EYRVpNuDJNiNAuNLZM6g2cm44C56VyM7KX3B291VmGLLQ_GuP1kEntVWvOzNemWHbKPMfyrYyFp-w9sOjkaRHA4uXSnMyfWvKX4-3&usqp=CAc", l: "https://www.notion.so/Backups-2e4d0c17411c80e08bb3dc587b82d17f" },
+        { t: "Dom Casmurro", c: "https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcS1VajnRQv6J99N55SEv9oqDl3zgDBRNtXVK4SouzcNXLq_HF_LKzJ8LUui6pO0NSGFT1O3GmiKYrxRn4nSqUsU9LKQ4XCf8DMpOxngWE6R2BIgMNXUmtwuAg&usqp=CAc", l: "https://www.notion.so/Backups-2e4d0c17411c80e08bb3dc587b82d17f" },
+        { t: "O Alquimista", c: "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcS0_pa36FCAMM2S83ul65Y9mELcI6V8j-1l0h0e4E64vMEoiycHCtyCtkfAbqGiCLd1ADmGrzfuuoPrkms8aFk7vwYcpYNWjPUa3oTfzpAh&usqp=CAc", l: "https://www.notion.so/Backups-2e4d0c17411c80e08bb3dc587b82d17f" },
+        { t: "Fahrenheit 451", c: "https://encrypted-tbn1.gstatic.com/shopping?q=tbn:ANd9GcQ_K8mdsSd4qyqCJkqQfczK-w1JS1oRn4t5q-k9nUazPYB_K1l54iz1BBswMXqYL4gZnQK_HkSVQ572E9yPE8ckq0Lkv0RAANL1GKIvRgaUJHb7KdbtEZGa&usqp=CAc", l: "https://www.notion.so/Backups-2e4d0c17411c80e08bb3dc587b82d17f" },
+        { t: "O Silmarillion", c: "https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcQOuVYww_GkrOKFXgA7rCrS3GIYPlRRjwkBG8MtYngCPCrNEupLlYizwOwYhPB7m6A1Xuvvd7nGCengxX8pTgb58n1uY8p4XBmjM1_qrMry&usqp=CAc", l: "https://www.notion.so/Backups-2e4d0c17411c80e08bb3dc587b82d17f" },
+        { t: "Crime e Castigo", c: "https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcQal7Dh43aaBeMgKGyAb8FpuHWRvTN21_5x_C9wit7Xb8_xC-B3qzjOkdV3gqeiCVOXGydPxp_5UjKnL_KdiNRVvZwYEyohyXN-ydPSe3-7Z7rKlL0wG_9S&usqp=CAc", l: "https://www.notion.so/Backups-2e4d0c17411c80e08bb3dc587b82d17f" },
+        { t: "Admirável Mundo Novo", c: "https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcTxt-Vn3FXH5uj70vFa4-mg8hp-kZA0RA-cKx7dF5CRlZ7WVYk-G_OwfFTUU2YJFwqsybSl-gP7ChPkC15XSvaIrRx1csX5K9Pd9jvNd67wghsXjg1QEHCBGg&usqp=CAc", l: "https://www.notion.so/Backups-2e4d0c17411c80e08bb3dc587b82d17f" },
+        { t: "O Retrato de Dorian Gray", c: "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcSTEPq_UFSrjvjqSCgWZHd_f9eGHRG13gYG3eT69i-N1oEuLIk_cv7SE0O6cGPQH6mE3MHgNmuZ06CpHneiR0rOgCNAPMQX6ot_Xd1AWqz2CQM8rU-r26PU&usqp=CAc", l: "https://www.notion.so/Backups-2e4d0c17411c80e08bb3dc587b82d17f" },
+        { t: "Ensaio Sobre a Cegueira", c: "https://encrypted-tbn1.gstatic.com/shopping?q=tbn:ANd9GcTeJBqbU9Tmnw2BFalDExaFSNM3iPQo96fSxo72KGCAQ32DxD8NoZjc4R7jzrVGa5BHAVKI5jafASMwCj3K-YvA-CEMVHu2Ma2-YPSOz1eLbm_xeL4x3RlJBSK0R128r7YzgsDIPv6zvQ&usqp=CAc", l: "https://www.notion.so/Backups-2e4d0c17411c80e08bb3dc587b82d17f" },
+        { t: "Drácula", c: "https://encrypted-tbn1.gstatic.com/shopping?q=tbn:ANd9GcQilgjt23uhIzH9R831NZbp8vUuWhqP2_aJrwJtV5Ci_tcmVNWjhmJ6dzrkBZV5k8vb-r9BG1rwLRdave_xJoC2uqYCqaj4rE9Kx82Pnxj4&usqp=CAc", l: "https://www.notion.so/Backups-2e4d0c17411c80e08bb3dc587b82d17f" },
+        { t: "Moby Dick", c: "https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcQ9Z7JwUOGmXVuGvuN8XclVpn5jtn2SFXe0yggk2yi7HHsEFI3iLtferwd34ORfTamLwOUQQ-HoSnjuMqkd9ZDuqv026uxm4tHfXWhFEggnGPNBwRHaaNVm&usqp=CAc", l: "https://www.notion.so/Backups-2e4d0c17411c80e08bb3dc587b82d17f" }
+    ];
+
+    const REPETICOES = 25;
+    const TOTAL_ITEMS = obrasBase.length * REPETICOES;
+    let lidos = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    let currentGlobalIndex = Math.floor(TOTAL_ITEMS / 2);
+    let isSpinning = false;
+
+    const track = document.getElementById('track');
+    const titleDisp = document.getElementById('bookTitle');
+    const viewport = document.getElementById('viewport');
+
+    function initTrack() {
+        track.innerHTML = '';
+        for (let i = 0; i < TOTAL_ITEMS; i++) {
+            const obraIndex = i % obrasBase.length;
+            const card = document.createElement('div');
+            card.className = `book-card ${lidos.includes(obraIndex) ? 'is-read' : ''}`;
+            card.style.backgroundImage = `url(${obrasBase[obraIndex].c})`;
+            card.dataset.obraIndex = obraIndex;
+
+            card.onclick = () => {
+                if (!isSpinning && card.classList.contains('winner')) {
+                    const link = obrasBase[obraIndex].l;
+                    if (link && link !== "#") window.open(link, '_blank');
+                }
+            };
+
+            const check = document.createElement('div');
+            check.className = 'read-check';
+            check.innerHTML = '✓';
+            check.onclick = (e) => { e.stopPropagation(); toggleRead(obraIndex); };
+
+            card.appendChild(check);
+            track.appendChild(card);
+        }
+        setTimeout(() => moveToIndex(currentGlobalIndex, false), 100);
+    }
+
+    function moveToIndex(index, animate = true) {
+        currentGlobalIndex = index;
+        const cardW = document.querySelector('.book-card').offsetWidth;
+        const gap = parseInt(getComputedStyle(track).gap || 20);
+        const viewportW = viewport.offsetWidth;
+        const offset = (viewportW / 2) - ((index * (cardW + gap)) + (cardW / 2));
+        
+        track.style.transition = animate ? 'transform 4s cubic-bezier(0.15, 0, 0.05, 1)' : 'none';
+        track.style.transform = `translateX(${offset}px)`;
+
+        if (animate) {
+            let lastCardHit = -1;
+            const checkTick = setInterval(() => {
+                const matrix = new WebKitCSSMatrix(getComputedStyle(track).transform);
+                const activeCard = Math.round(((viewportW / 2) - matrix.m41 - (cardW / 2)) / (cardW + gap));
+                if (activeCard !== lastCardHit) { playTick(); lastCardHit = activeCard; }
+            }, 50);
+            setTimeout(() => clearInterval(checkTick), 4000);
+        }
+        if (!animate) updateHighlights(index);
+    }
+
+    function updateHighlights(activeIndex) {
+        const cards = document.querySelectorAll('.book-card');
+        track.classList.remove('has-winner');
+        cards.forEach(c => c.classList.remove('winner'));
+        if (!isSpinning && activeIndex >= 0) {
+            const activeCard = cards[activeIndex];
+            if (activeCard) {
+                track.classList.add('has-winner');
+                activeCard.classList.add('winner');
+                titleDisp.innerText = obrasBase[activeIndex % obrasBase.length].t;
+            }
+        }
+    }
+
+    function startSorteio() {
+        if (isSpinning) return;
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const disponiveis = obrasBase.map((_, i) => i).filter(i => !lidos.includes(i));
+        if (disponiveis.length === 0) { titleDisp.innerText = "Tudo lido! 🎉"; return; }
+        isSpinning = true;
+        titleDisp.innerText = "Sorteando...";
+        updateHighlights(-1);
+        const vencedorRealIndex = disponiveis[Math.floor(Math.random() * disponiveis.length)];
+        let targetIndex = currentGlobalIndex + (obrasBase.length * 2) + Math.floor(Math.random() * 5);
+        while (targetIndex % obrasBase.length !== vencedorRealIndex) { targetIndex++; }
+        moveToIndex(targetIndex, true);
+        setTimeout(() => { isSpinning = false; updateHighlights(targetIndex); }, 4100);
+    }
+
+    function toggleRead(idx) {
+        if (lidos.includes(idx)) lidos = lidos.filter(i => i !== idx);
+        else lidos.push(idx);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(lidos));
+        document.querySelectorAll('.book-card').forEach(card => {
+            if (parseInt(card.dataset.obraIndex) === idx) card.classList.toggle('is-read');
+        });
+    }
+
+    // --- SISTEMA DE BACKUP IGUAL À ESTANTE ---
+    function openSync() { document.getElementById('syncModal').classList.add('open'); }
+    function closeSync() { document.getElementById('syncModal').classList.remove('open'); }
+
+    function generateBackupCode() {
+        const dataStr = JSON.stringify(lidos);
+        const textArea = document.getElementById('backupText');
+        textArea.value = dataStr;
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            alert("Código de backup copiado com sucesso!");
+        } catch (err) { alert("Selecione e copie o texto manualmente."); }
+    }
+
+    function restoreBackupCode() {
+        const textArea = document.getElementById('backupText');
+        const code = textArea.value.trim();
+        if (!code) { alert("Cole o código na caixa de texto."); return; }
+        try {
+            const imported = JSON.parse(code);
+            if (Array.isArray(imported)) {
+                lidos = imported;
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(lidos));
+                alert("Restaurado com sucesso! A página irá recarregar.");
+                location.reload();
+            } else { alert("Código inválido."); }
+        } catch (err) { alert("Erro ao ler o código. Verifique se copiou tudo."); }
+    }
+
+    window.addEventListener('resize', () => moveToIndex(currentGlobalIndex, false));
+    initTrack();
+</script>
+</body>
+</html>
