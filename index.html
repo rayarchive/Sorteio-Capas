@@ -224,7 +224,7 @@
         const gain = audioCtx.createGain();
         osc.type = 'sine';
         osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
@@ -250,7 +250,7 @@
         { t: "Moby Dick", c: "https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcQ9Z7JwUOGmXVuGvuN8XclVpn5jtn2SFXe0yggk2yi7HHsEFI3iLtferwd34ORfTamLwOUQQ-HoSnjuMqkd9ZDuqv026uxm4tHfXWhFEggnGPNBwRHaaNVm&usqp=CAc", l: "https://www.notion.so/Backups-2e4d0c17411c80e08bb3dc587b82d17f" }
     ];
 
-    const REPETICOES = 25;
+    const REPETICOES = 100;
     const TOTAL_ITEMS = obrasBase.length * REPETICOES;
     let lidos = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
     let currentGlobalIndex = Math.floor(TOTAL_ITEMS / 2);
